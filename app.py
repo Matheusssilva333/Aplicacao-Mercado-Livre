@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from services.auth import AuthService
 from services.mercado_livre import MercadoLivreService
 
+
 # Carregar variáveis de ambiente
 load_dotenv()
 

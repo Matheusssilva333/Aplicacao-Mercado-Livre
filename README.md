@@ -1,6 +1,6 @@
-# Mercado Livre API Integration (Flask)
+# Aplicação Integrada ao Mercado Livre
 
-Este projeto é uma estrutura inicial para integrar com a API do Mercado Livre utilizando Python e Flask, com foco em autenticação OAuth 2.0 e exibição de produtos.
+Este projeto é uma aplicação de busca de produtos integrada à API do Mercado Livre com testes automatizados e com a biblioteca de segurança DOMpurify para um desafio de entrada em um projeto.
 
 ## 🚀 Funcionalidades
 
@@ -61,5 +61,3 @@ Acesse `http://localhost:5000` no seu navegador.
 - **Filtro**: O filtro por marca é case-insensitive e busca o atributo `BRAND` dentro da lista de atributos do produto.
 - **Mock**: No primeiro acesso, sem preencher o `.env`, o sistema solicitará o login. Para testar sem API, as funções podem ser adaptadas para retornar dados mockados na classe `MercadoLivreService`.
 
----
-Desenvolvido como um template profissional para aplicações de e-commerce.

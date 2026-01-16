@@ -31,3 +31,7 @@ ENV/
 # IDEs
 .vscode/
 .idea/
+
+# JavaScript
+node_modules/
+npm-debug.log*

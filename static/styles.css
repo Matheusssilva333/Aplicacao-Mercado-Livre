@@ -8,6 +8,7 @@
     --card-bg: #fff;
 }
 
+
 body {
     font-family: 'Proxima Nova', -apple-system, "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
     background-color: var(--bg-color);

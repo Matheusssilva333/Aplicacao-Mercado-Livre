@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Agent - Dashboard de Produtos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <header>
+        <div
+            style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="margin: 0; font-size: 1.5rem;">Mercado Livre Explorer</h1>
+            {% if session.get('access_token') %}
+            <a href="{{ url_for('logout') }}" style="text-decoration: none; color: #333; font-size: 0.9rem;">Sair</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="container">
+        {% if not session.get('access_token') %}
+        <div class="login-container">
+            <h2>Bem-vindo ao Dashboard</h2>
+            <p>Para visualizar seus produtos e realizar buscas, conecte sua conta do Mercado Livre.</p>
+            <br>
+            <a href="{{ url_for('login') }}" class="btn-auth">Conectar Mercado Livre</a>
+        </div>
+        {% else %}
+        {% if session.get('access_token') == 'mock-token' %}
+        <div
+            style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 4px; margin-bottom: 2rem; border: 1px solid #ffeeba;">
+            <strong>Modo de Demonstração:</strong> Você está visualizando dados mockados porque o arquivo .env não
+            possui credenciais válidas.
+        </div>
+        {% endif %}
+        <div class="filters">
+            <form action="/" method="GET" style="display: flex; width: 100%; gap: 1rem;">
+                <input type="text" name="brand" placeholder="Filtrar por marca (ex: Samsung, Apple...)"
+                    value="{{ request.args.get('brand', '') }}">
+                <input type="text" name="q" placeholder="Buscar outro produto..."
+                    value="{{ request.args.get('q', 'notebook') }}">
+                <button type="submit">Buscar / Filtrar</button>
+            </form>
+        </div>
+
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <img src="{{ product.thumbnail }}" alt="{{ product.title }}" class="product-image">
+                <div class="product-info">
+                    <span class="product-brand">{{ product.brand }}</span>
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    <div class="product-price">
+                        {{ "R$ {:,.2f}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    </div>
+                    <a href="{{ product.permalink }}" target="_blank"
+                        style="margin-top: 1rem; color: var(--secondary-color); text-decoration: none; font-size: 0.9rem;">Ver
+                        no ML</a>
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <p>Nenhum produto encontrado para estes filtros.</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

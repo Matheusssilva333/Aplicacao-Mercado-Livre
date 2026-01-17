@@ -1,8 +1,11 @@
 import requests
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 class AuthService:
     """
@@ -33,7 +36,9 @@ class AuthService:
         }
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         
+        logger.info(f"Fazendo requisição de token para {url} com redirect_uri: {self.redirect_uri}")
         response = requests.post(url, data=payload, headers=headers)
+        logger.info(f"Resposta do ML: Status {response.status_code}")
         return response.json()
 
     def refresh_token(self, refresh_token):

@@ -1,4 +1,7 @@
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MercadoLivreService:
     """
@@ -18,7 +21,7 @@ class MercadoLivreService:
         Busca produtos ativos. 
         Se o token for 'mock-token' ou falhar, retorna dados mockados para demonstração.
         """
-        if self.access_token == "mock-token":
+        if self.access_token == "mock-token" or not self.access_token:
             return self._get_mock_products(query)
 
         url = f"{self.API_BASE_URL}/sites/MLB/search"
@@ -28,14 +31,16 @@ class MercadoLivreService:
             params['seller_id'] = seller_id
 
         try:
-            response = requests.get(url, params=params, headers=self.headers)
+            response = requests.get(url, params=params, headers=self.headers, timeout=10)
             if response.status_code == 401:
+                logger.warning("Token expirado ou inválido (401). Retornando mocks.")
                 return self._get_mock_products(query)
+            
             response.raise_for_status()
             data = response.json()
             return self._normalize_results(data.get('results', []))
         except Exception as e:
-            print(f"Erro ao buscar produtos: {e}. Retornando mocks.")
+            logger.error(f"Erro ao buscar produtos no ML: {str(e)}")
             return self._get_mock_products(query)
 
     def _get_mock_products(self, query):

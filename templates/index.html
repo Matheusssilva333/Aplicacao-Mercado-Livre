@@ -53,7 +53,11 @@
                     <span class="product-brand">{{ product.brand }}</span>
                     <h3 class="product-title">{{ product.title }}</h3>
                     <div class="product-price">
+                        {% if product.price %}
                         {{ "R$ {:,.2f}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        {% else %}
+                        Preço sob consulta
+                        {% endif %}
                     </div>
                     <a href="{{ product.permalink }}" target="_blank"
                         style="margin-top: 1rem; color: var(--secondary-color); text-decoration: none; font-size: 0.9rem;">Ver

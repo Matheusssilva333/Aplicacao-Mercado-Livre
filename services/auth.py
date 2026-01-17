@@ -16,13 +16,16 @@ class AuthService:
     AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
     
     def __init__(self):
-        self.client_id = os.getenv("ML_CLIENT_ID")
-        self.client_secret = os.getenv("ML_CLIENT_SECRET")
-        self.redirect_uri = os.getenv("ML_REDIRECT_URI")
+        # .strip() remove espaços em branco, quebras de linha ou caracteres invisíveis acidentais
+        self.client_id = os.getenv("ML_CLIENT_ID", "").strip()
+        self.client_secret = os.getenv("ML_CLIENT_SECRET", "").strip()
+        self.redirect_uri = os.getenv("ML_REDIRECT_URI", "").strip()
 
     def get_auth_url(self):
         """Retorna a URL para o usuário iniciar a autorização."""
-        return f"{self.AUTH_URL}?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}"
+        url = f"{self.AUTH_URL}?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}"
+        # Limpar qualquer caractere de controle que possa quebrar o cabeçalho HTTP
+        return url.replace("\n", "").replace("\r", "")
 
     def exchange_code_for_token(self, code):
         """Troca o código de autorização pelo access_token."""
@@ -31,7 +34,7 @@ class AuthService:
             'grant_type': 'authorization_code',
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'code': code,
+            'code': code.strip(),
             'redirect_uri': self.redirect_uri
         }
         headers = {'content-type': 'application/x-www-form-urlencoded'}
@@ -48,7 +51,7 @@ class AuthService:
             'grant_type': 'refresh_token',
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'refresh_token': refresh_token
+            'refresh_token': refresh_token.strip()
         }
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         

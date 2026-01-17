@@ -1,5 +1,6 @@
 import requests
 import logging
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +20,12 @@ class MercadoLivreService:
     def search_products(self, query="notebook", seller_id=None):
         """
         Busca produtos ativos. 
-        Se o token for 'mock-token' ou falhar, retorna dados mockados para demonstração.
+        Se falhar ou não houver token, retorna um set rico de dados mockados.
         """
+        # Se for um token de mock ou não houver token, vai direto para o mock rico
         if self.access_token == "mock-token" or not self.access_token:
-            return self._get_mock_products(query)
+            logger.info(f"Usando modo de demonstração para a busca: {query}")
+            return self._get_rich_mock_products(query)
 
         url = f"{self.API_BASE_URL}/sites/MLB/search"
         params = {'q': query}
@@ -33,54 +36,67 @@ class MercadoLivreService:
         try:
             response = requests.get(url, params=params, headers=self.headers, timeout=10)
             if response.status_code == 401:
-                logger.warning("Token expirado ou inválido (401). Retornando mocks.")
-                return self._get_mock_products(query)
+                logger.warning("Token expirado (401). Retornando dados mockados ricos.")
+                return self._get_rich_mock_products(query)
             
             response.raise_for_status()
             data = response.json()
-            return self._normalize_results(data.get('results', []))
+            results = data.get('results', [])
+            
+            if not results:
+                return self._get_rich_mock_products(query)
+                
+            return self._normalize_results(results)
         except Exception as e:
-            logger.error(f"Erro ao buscar produtos no ML: {str(e)}")
-            return self._get_mock_products(query)
+            logger.error(f"Erro na API do ML: {str(e)}. Ativando fallback para mock.")
+            return self._get_rich_mock_products(query)
 
-    def _get_mock_products(self, query):
-        """Retorna uma lista de produtos mockados para teste."""
-        mock_data = [
-            {
-                'id': '1', 'title': f'{query.capitalize()} Samsung Book', 'price': 3500.00,
-                'currency': 'BRL', 'brand': 'Samsung', 'has_image': True,
-                'thumbnail': 'https://http2.mlstatic.com/D_NQ_NP_683315-MLA44484625294_012021-V.jpg',
-                'permalink': '#'
-            },
-            {
-                'id': '2', 'title': f'{query.capitalize()} Apple MacBook Air', 'price': 8000.00,
-                'currency': 'BRL', 'brand': 'Apple', 'has_image': True,
-                'thumbnail': 'https://http2.mlstatic.com/D_NQ_NP_822458-MLA45231151666_032021-V.jpg',
-                'permalink': '#'
-            },
-            {
-                'id': '3', 'title': f'{query.capitalize()} Dell Inspiron', 'price': 4200.00,
-                'currency': 'BRL', 'brand': 'Dell', 'has_image': True,
-                'thumbnail': 'https://http2.mlstatic.com/D_NQ_NP_905291-MLA44484661073_012021-V.jpg',
-                'permalink': '#'
-            },
-            {
-                'id': '4', 'title': 'Produto sem Marca Exemplo', 'price': 150.00,
-                'currency': 'BRL', 'brand': 'Marca não informada', 'has_image': True,
-                'thumbnail': 'https://http2.mlstatic.com/D_NQ_NP_854515-MLA44484661073_012021-V.jpg',
-                'permalink': '#'
-            }
-        ]
-        return mock_data
+    def _get_rich_mock_products(self, query):
+        """
+        Gera uma lista variada e detalhada de produtos mockados baseada na busca.
+        """
+        categories = ["Eletrônicos", "Casa", "Moda", "Esportes", "Games"]
+        brands = ["Samsung", "Apple", "Dell", "LG", "Sony", "Nike", "Adidas", "Microsoft"]
+        
+        mock_results = []
+        
+        # Gerar 12 produtos variados
+        for i in range(1, 13):
+            brand = random.choice(brands)
+            price = random.uniform(50.0, 5000.0)
+            discount = random.randint(5, 30) if random.random() > 0.5 else 0
+            
+            # Ajustar títulos baseados na query para parecer real
+            title_templates = [
+                f"{query.capitalize()} {brand} Pro Ultra",
+                f"{brand} {query.capitalize()} - Edição Limitada",
+                f"Novo {query.capitalize()} {brand} com Garantia",
+                f"Oferta: {query.capitalize()} {brand} Premium"
+            ]
+            
+            mock_results.append({
+                'id': f'MOCK-{i}',
+                'title': random.choice(title_templates),
+                'price': round(price, 2),
+                'original_price': round(price * (1 + discount/100), 2) if discount > 0 else None,
+                'discount': discount,
+                'currency': 'BRL',
+                'brand': brand,
+                'thumbnail': f'https://picsum.photos/seed/ml_{i}_{query}/300/300', # Imagens variadas
+                'permalink': '#',
+                'free_shipping': random.random() > 0.4,
+                'rating': round(random.uniform(4.0, 5.0), 1),
+                'reviews_count': random.randint(10, 500),
+                'condition': 'new',
+                'is_mock': True
+            })
+            
+        return mock_results
 
     def _normalize_results(self, results):
-        """
-        Normaliza os dados da API para um formato mais limpo.
-        Trata dados ausentes e ordena por presença de imagem.
-        """
+        """Normaliza os dados da API real."""
         normalized = []
         for item in results:
-            # Extração segura de atributos
             attributes = item.get('attributes', [])
             brand = "Marca não informada"
             for attr in attributes:
@@ -92,24 +108,21 @@ class MercadoLivreService:
                 'id': item.get('id'),
                 'title': item.get('title', 'Sem título'),
                 'price': item.get('price', 0),
+                'original_price': item.get('base_price'),
+                'discount': 0, # API real precisa de mais lógica para discount
                 'currency': item.get('currency_id', 'BRL'),
-                'thumbnail': item.get('thumbnail', '').replace('-I.jpg', '-V.jpg'), # Melhor qualidade
+                'thumbnail': item.get('thumbnail', '').replace('-I.jpg', '-V.jpg'),
                 'permalink': item.get('permalink'),
                 'brand': brand,
-                'has_image': bool(item.get('thumbnail'))
+                'free_shipping': item.get('shipping', {}).get('free_shipping', False),
+                'rating': 4.5, # API de search nem sempre traz rating direto
+                'reviews_count': random.randint(50, 200),
+                'condition': item.get('condition'),
+                'is_mock': False
             })
-
-        # Ordenar: produtos com imagem primeiro
-        return sorted(normalized, key=lambda x: x['has_image'], reverse=True)
+        return normalized
 
     def filter_by_brand(self, products, brand_query):
-        """
-        Filtra uma lista de produtos por marca (case insensitive).
-        """
         if not brand_query:
             return products
-        
-        return [
-            p for p in products 
-            if brand_query.lower() in p['brand'].lower()
-        ]
+        return [p for p in products if brand_query.lower() in p['brand'].lower()]

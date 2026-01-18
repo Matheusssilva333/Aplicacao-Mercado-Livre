@@ -30,7 +30,7 @@ Este projeto é uma aplicação de busca de produtos integrada à API do Mercado
 
 ### 1. Requisitos
 - Python 3.10 ou superior
-- Uma aplicação criada no [Mercado Livre Developers](https://developers.mercadolivre.com.br/dev-center/)
+- Uma aplicação criada no https://developers.mercadolivre.com.br/pt_br/api-docs-pt-br
 
 ### 2. Instalação
 Clone o repósitório (ou copie os arquivos) e instale as dependências:

@@ -1,6 +1,6 @@
 # Aplicação Integrada ao Mercado Livre
 
-Este projeto é uma aplicação de busca de produtos integrada à API do Mercado Livre com testes automatizados e com a biblioteca de segurança DOMpurify para um desafio de entrada em um projeto.
+Este projeto é uma aplicação de busca de produtos integrada à API do Mercado Livre com testes automatizados e com a biblioteca de segurança DOMpurify para um desafio de entrada em um projeto e foi hospedado no Render.
  Ao acessar o link você vai abrir uma tela de login fake com dados mockados e vai ter que conectar sua conta do Mercado Livre na aplicação para acessar dados reais.
 
 ## 🚀 Funcionalidades

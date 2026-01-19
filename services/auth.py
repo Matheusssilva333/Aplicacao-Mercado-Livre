@@ -1,4 +1,4 @@
-------++import requests
+import requests
 import os
 import logging
 from urllib.parse import urlencode
@@ -23,7 +23,7 @@ class AuthService:
 
     def get_auth_url(self):
         """Gera URL de autorização com encoding correto."""
-        if not self.client_id or not self.redirect_uri:++-
+        if not self.client_id or not self.redirect_uri:
             logger.error("Configurações ML_CLIENT_ID ou ML_REDIRECT_URI ausentes no .env")
             return None
             

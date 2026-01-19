@@ -61,25 +61,46 @@ def callback():
     code = request.args.get('code')
     error = request.args.get('error')
 
-    if error or not code:
-        logger.warning(f"Falha no callback: {error or 'sem código'}")
+    if error:
+        logger.error(f"Erro retornado pelo Mercado Livre no callback: {error}")
+        return redirect(url_for('index', auth_error="access_denied"))
+
+    if not code:
+        logger.warning("Callback acessado sem código de autorização.")
         return redirect(url_for('index'))
 
+    # Tenta trocar o código pelo token
     token_data = auth_service.exchange_code_for_token(code)
-    print("token_data", token_data)
+    
     if 'access_token' in token_data:
+        # Sucesso! Armazenamos os tokens na sessão
         session['access_token'] = token_data['access_token']
-        logger.info("Autenticação realizada com sucesso.")
+        if 'refresh_token' in token_data:
+            session['refresh_token'] = token_data['refresh_token']
+        
+        # Opcional: armazenar o user_id retornado pelo ML
+        session['ml_user_id'] = token_data.get('user_id')
+        
+        logger.info(f"Autenticação bem-sucedida para o usuário {session['ml_user_id']}")
         return redirect(url_for('index'))
     else:
-        logger.error(f"Erro na troca do token: {token_data.get('error_description')}")
-        return redirect(url_for('index'))
+        # Falha na troca (ex: código expirado ou redirect_uri divergente)
+        error_msg = token_data.get('error_description', token_data.get('message', 'Erro desconhecido'))
+        logger.error(f"Falha na troca do token: {error_msg}")
+        return redirect(url_for('index', auth_error=error_msg))
 
 @app.route("/logout")
 def logout():
     session.clear()
+    logger.info("Sessão encerrada pelo usuário.")
     return redirect(url_for('index'))
 
 if __name__ == "__main__":
+    # Garante que temos uma secret_key configurada para as sessões funcionarem
+    if not os.getenv("FLASK_SECRET_KEY"):
+        logger.warning("Aviso: FLASK_SECRET_KEY não encontrada no .env. Usando chave padrão (inseguro para produção).")
+        
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    # Em produção (Render), debug deve ser False
+    debug_mode = os.getenv("FLASK_ENV") == "development"
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

@@ -1,6 +1,7 @@
 import requests
 import os
 import logging
+from urllib.parse import urlencode
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,18 +12,19 @@ class AuthService:
     Serviço oficial para fluxo Authorization Code do Mercado Livre.
     """
     API_BASE_URL = "https://api.mercadolibre.com"
+    # Usando o domínio global para maior compatibilidade
     AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
     
     def __init__(self):
-        # Sanitização agressiva: remove quebras de linha e espaços invisíveis
-        self.client_id = str(os.getenv("ML_CLIENT_ID", "")).strip().replace("\n", "").replace("\r", "")
-        self.client_secret = str(os.getenv("ML_CLIENT_SECRET", "")).strip().replace("\n", "").replace("\r", "")
-        self.redirect_uri = str(os.getenv("ML_REDIRECT_URI", "")).strip().replace("\n", "").replace("\r", "")
+        # Sanitização: remove espaços e quebras de linha acidentais
+        self.client_id = str(os.getenv("ML_CLIENT_ID", "")).strip()
+        self.client_secret = str(os.getenv("ML_CLIENT_SECRET", "")).strip()
+        self.redirect_uri = str(os.getenv("ML_REDIRECT_URI", "")).strip()
 
     def get_auth_url(self):
-        """Gera URL de autorização baseada na documentação oficial."""
+        """Gera URL de autorização com encoding correto."""
         if not self.client_id or not self.redirect_uri:
-            logger.error("Configuração ausente: client_id ou redirect_uri")
+            logger.error("Configurações ML_CLIENT_ID ou ML_REDIRECT_URI ausentes no .env")
             return None
             
         params = {
@@ -30,13 +32,13 @@ class AuthService:
             "client_id": self.client_id,
             "redirect_uri": self.redirect_uri
         }
-        # Montagem manual para garantir que não haja caracteres de escape extras
-        query = "&".join([f"{k}={v}" for k, v in params.items()])
-        return f"{self.AUTH_URL}?{query}"
+        return f"{self.AUTH_URL}?{urlencode(params)}"
 
     def exchange_code_for_token(self, code):
-        """Troca o 'code' pelo token conforme documentação oficial."""
+        """Troca o 'code' pelo token real."""
         url = f"{self.API_BASE_URL}/oauth/token"
+        
+        # O ML exige que o redirect_uri seja idêntico ao usado no get_auth_url
         payload = {
             'grant_type': 'authorization_code',
             'client_id': self.client_id,
@@ -44,12 +46,21 @@ class AuthService:
             'code': code.strip(),
             'redirect_uri': self.redirect_uri
         }
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        
+        headers = {
+            'accept': 'application/json',
+            'content-type': 'application/x-www-form-urlencoded'
+        }
         
         try:
-            logger.info(f"Requisitando token. URL: {url} | Redirect URI: {self.redirect_uri}")
+            logger.info(f"Iniciando troca de token para o código: {code[:10]}...")
             response = requests.post(url, data=payload, headers=headers, timeout=15)
+            
+            if response.status_code != 200:
+                logger.error(f"Erro na API ML ({response.status_code}): {response.text}")
+                return response.json()
+                
             return response.json()
         except Exception as e:
-            logger.error(f"Falha na comunicação com API ML: {str(e)}")
-            return {"error": "connection_error", "error_description": str(e)}
+            logger.error(f"Erro de conexão com Mercado Livre: {str(e)}")
+            return {"error": "connection_error", "message": str(e)}

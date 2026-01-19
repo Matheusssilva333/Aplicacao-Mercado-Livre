@@ -100,17 +100,12 @@ class MercadoLivreService:
             # Imagem e Placeholder
             thumbnail = item.get('thumbnail', '')
             
-            # Se não tiver thumbnail, tenta pegar da lista 'pictures' (comum em details)
+            # Se não tiver thumbnail, tenta pegar da lista 'pictures'
             if not thumbnail and 'pictures' in item and len(item['pictures']) > 0:
                 thumbnail = item['pictures'][0].get('url', '')
 
-            # Força HTTPS na imagem (ML às vezes retorna HTTP)
-            if thumbnail.startswith('http://'):
-               # Imagem e Placeholder
-            thumbnail = item.get('thumbnail', '')
-            
             # Força HTTPS para evitar Mixed Content Block
-            if thumbnail.startswith('http://'):
+            if thumbnail and thumbnail.startswith('http://'):
                 thumbnail = thumbnail.replace('http://', 'https://')
                 
             has_image = bool(thumbnail and "placeholder" not in thumbnail.lower())

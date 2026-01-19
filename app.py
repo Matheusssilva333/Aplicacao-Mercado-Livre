@@ -27,8 +27,12 @@ auth_service = AuthService()
 @app.route("/")
 def index():
     # Recupera tokens
-    access_token = session.get('access_token') or os.getenv("ML_ACCESS_TOKEN")
-    refresh_token = session.get('refresh_token') or os.getenv("ML_REFRESH_TOKEN")
+    # Recupera tokens e limpa possíveis espaços em branco
+    access_token = session.get('access_token') or os.getenv("ML_ACCESS_TOKEN", "")
+    if access_token: access_token = access_token.strip()
+    
+    refresh_token = session.get('refresh_token') or os.getenv("ML_REFRESH_TOKEN", "")
+    if refresh_token: refresh_token = refresh_token.strip()
     
     query = request.args.get('q', 'notebook')
     

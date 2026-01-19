@@ -61,7 +61,11 @@ class MercadoLivreService:
             
         except requests.exceptions.HTTPError as e:
             logger.error(f"Erro HTTP na API ML: {e}")
-            return {"error": "api_error", "message": f"Erro na API: {response.status_code}"}
+            try:
+                error_detail = response.json().get('message') or response.json().get('error')
+            except:
+                error_detail = response.text
+            return {"error": "api_error", "message": f"Erro na API ({response.status_code}): {error_detail}"}
         except Exception as e:
             logger.error(f"Erro inesperado na busca: {str(e)}")
             return []

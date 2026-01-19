@@ -30,7 +30,8 @@ class AuthService:
         params = {
             "response_type": "code",
             "client_id": self.client_id,
-            "redirect_uri": self.redirect_uri
+            "redirect_uri": self.redirect_uri,
+            "scope": "offline_access read"
         }
         return f"{self.AUTH_URL}?{urlencode(params)}"
 

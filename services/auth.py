@@ -1,4 +1,4 @@
-import requests
+------++import requests
 import os
 import logging
 from urllib.parse import urlencode
@@ -23,7 +23,7 @@ class AuthService:
 
     def get_auth_url(self):
         """Gera URL de autorização com encoding correto."""
-        if not self.client_id or not self.redirect_uri:
+        if not self.client_id or not self.redirect_uri:++-
             logger.error("Configurações ML_CLIENT_ID ou ML_REDIRECT_URI ausentes no .env")
             return None
             
@@ -65,4 +65,28 @@ class AuthService:
             return response.json()
         except Exception as e:
             logger.error(f"Erro de conexão com Mercado Livre: {str(e)}")
+            return {"error": "connection_error", "message": str(e)}
+
+    def refresh_access_token(self, refresh_token):
+        """Usa o refresh_token para obter um novo access_token."""
+        url = f"{self.API_BASE_URL}/oauth/token"
+        
+        payload = {
+            'grant_type': 'refresh_token',
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'refresh_token': refresh_token.strip()
+        }
+        
+        headers = {
+            'accept': 'application/json',
+            'content-type': 'application/x-www-form-urlencoded'
+        }
+        
+        try:
+            logger.info("Tentando renovar o token de acesso...")
+            response = requests.post(url, data=payload, headers=headers, timeout=15)
+            return response.json()
+        except Exception as e:
+            logger.error(f"Erro ao renovar token: {str(e)}")
             return {"error": "connection_error", "message": str(e)}

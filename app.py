@@ -26,23 +26,33 @@ auth_service = AuthService()
 
 @app.route("/")
 def index():
-    access_token = session.get('access_token')
+    # Tenta pegar da sessão primeiro, depois do .env como fallback
+    access_token = session.get('access_token') or os.getenv("ML_ACCESS_TOKEN")
+    refresh_token = session.get('refresh_token') or os.getenv("ML_REFRESH_TOKEN")
+    
     query = request.args.get('q', 'notebook')
     brand_filter = request.args.get('brand')
     
-    # Instancia serviço (com ou sem token)
+    # Instancia serviço
     ml_service = MercadoLivreService(access_token)
     
     try:
-        # Busca produtos (agora tem fallback automático para público se falhar)
+        # Busca produtos
         products = ml_service.search_products(query=query)
+        
+        # Se falhou e temos um refresh token, poderíamos tentar renovar aqui futuramente
+        # Por enquanto, apenas usamos o que temos
+        
         if brand_filter:
             products = ml_service.filter_by_brand(products, brand_filter)
     except Exception as e:
         logger.error(f"Erro ao carregar vitrine: {str(e)}")
         products = []
             
-    return render_template("index.html", products=products, is_logged_in=bool(access_token))
+    return render_template("index.html", 
+                         products=products, 
+                         is_logged_in=bool(access_token),
+                         user_id=session.get('ml_user_id') or os.getenv("ML_USER_ID"))
 
 @app.route("/login")
 def login():

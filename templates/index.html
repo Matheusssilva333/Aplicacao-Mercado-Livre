@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Explorer - Search & Discovery</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <h1 style="margin: 0; font-size: 1.5rem; letter-spacing: -0.5px;">Mercado Livre <span
+                    style="font-weight: 300;">Explorer</span></h1>
+            <div class="auth-nav">
+                {% if is_logged_in %}
+                <span style="font-size: 0.9rem; margin-right: 0.5rem; opacity: 0.7;">Conectado</span>
+                <a href="{{ url_for('logout') }}" class="btn-auth-header">Sair</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn-auth-header">Conectar Conta</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        {% if not is_logged_in %}
+        <div class="demo-badge">
+            <strong>⚠️ Modo de Demonstração Ativo:</strong>
+            Você está vendo dados sugeridos. Conecte sua conta para ver preços e produtos reais.
+        </div>
+        {% endif %}
+
+        <div class="filters">
+            <form action="/" method="GET">
+                <input type="text" name="q" placeholder="Buscar produtos, marcas e muito mais..."
+                    value="{{ request.args.get('q', 'notebook') }}">
+                <input type="text" name="brand" placeholder="Filtrar por marca"
+                    value="{{ request.args.get('brand', '') }}">
+                <button type="submit">Pesquisar</button>
+            </form>
+        </div>
+
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card" onclick="window.open('{{ product.permalink }}', '_blank')">
+                <div class="product-image-container">
+                    <img src="{{ product.thumbnail }}" alt="{{ product.title }}" class="product-image">
+                </div>
+                <div class="product-info">
+                    <span class="product-brand">{{ product.brand }}</span>
+                    <h3 class="product-title">{{ product.title }}</h3>
+
+                    <div class="price-container">
+                        {% if product.original_price %}
+                        <span class="original-price">R$ {{ "{:,.2f}".format(product.original_price).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</span>
+                        {% endif %}
+                        <div class="current-price-row">
+                            <span class="product-price">R$ {{ "{:,.2f}".format(product.price).replace(',',
+                                'X').replace('.', ',').replace('X', '.') }}</span>
+                            {% if product.discount > 0 %}
+                            <span class="discount-badge">{{ product.discount }}% OFF</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if product.free_shipping %}
+                    <div class="free-shipping">Frete grátis</div>
+                    {% endif %}
+
+                    <div class="rating-container">
+                        <span class="star">★</span>
+                        <span class="rating-value">{{ product.rating }}</span>
+                        <span class="reviews-count">({{ product.reviews_count }})</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 5rem 0;">
+                <p style="font-size: 1.2rem; color: #666;">Nenhum produto encontrado. Tente outra busca!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,7 @@
+flask
+requests
+python-dotenv
+pytest
+pytest-mock
+bleach
+gunicorn

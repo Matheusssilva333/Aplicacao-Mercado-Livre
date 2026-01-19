@@ -1,0 +1,15 @@
+{
+  "name": "aplicacao-mercado-livre",
+  "version": "1.0.0",
+  "description": "Integração com API do Mercado Livre",
+  "main": "app.py",
+  "scripts": {
+    "test": "python -m pytest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "isomorphic-dompurify": "^2.20.0"
+  }
+}

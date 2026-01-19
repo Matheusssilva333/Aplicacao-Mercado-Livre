@@ -1,6 +1,7 @@
 # Aplicação Integrada ao Mercado Livre
 
 Este projeto é uma aplicação de busca de produtos integrada à API do Mercado Livre com testes automatizados e com a biblioteca de segurança DOMpurify para um desafio de entrada em um projeto.
+Foi configurado para hospedagem no Render, permitindo acesso via link externo com um fluxo de login (real ou mockado) para visualizar dados do Mercado Livre.
 
 ## 🚀 Funcionalidades
 
@@ -30,7 +31,7 @@ Este projeto é uma aplicação de busca de produtos integrada à API do Mercado
 
 ### 1. Requisitos
 - Python 3.10 ou superior
-- Uma aplicação criada no [Mercado Livre Developers](https://developers.mercadolivre.com.br/dev-center/)
+- Uma aplicação criada no [Mercado Livre Developers](https://developers.mercadolivre.com.br/dev-center/) seguindo a [documentação oficial](https://developers.mercadolivre.com.br/pt_br/api-docs-pt-br).
 
 ### 2. Instalação
 Clone o repósitório (ou copie os arquivos) e instale as dependências:

@@ -14,10 +14,7 @@
             <h1 style="margin: 0; font-size: 1.5rem; letter-spacing: -0.5px;">Mercado Livre <span
                     style="font-weight: 300;">Explorer</span></h1>
             <div class="auth-nav">
-                {% if is_logged_in %}
-                <span style="font-size: 0.9rem; margin-right: 0.5rem; opacity: 0.7;">Conectado</span>
-                <a href="{{ url_for('logout') }}" class="btn-auth-header">Sair</a>
-                {% else %}
+                {% if not is_logged_in %}
                 <a href="{{ url_for('login') }}" class="btn-auth-header">Conectar Conta</a>
                 {% endif %}
             </div>
@@ -64,8 +61,12 @@
 
                     <div class="price-container">
                         <div class="current-price-row">
+                            {% if product.price > 0 %}
                             <span class="product-price">R$ {{ "{:,.2f}".format(product.price).replace(',',
                                 'X').replace('.', ',').replace('X', '.') }}</span>
+                            {% else %}
+                            <span class="product-price" style="font-size: 1rem; color: #666;">Ver no ML</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

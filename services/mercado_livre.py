@@ -116,14 +116,32 @@ class MercadoLivreService:
             elif has_image and '-I.png' in thumbnail: # Suporte a PNG
                 thumbnail = thumbnail.replace('-I.png', '-V.png')
 
+            # Tratamento de Preço (API de Catálogo é diferente)
+            price = item.get('price')
+            if not price:
+                # Tenta pegar do buy_box_winner ou price_range que é comum no catalogo
+                buy_box = item.get('buy_box_winner', {})
+                price = buy_box.get('price')
+                
+            if not price:
+                 # Fallback para range de preço se não tiver preço fixo
+                 price_range = item.get('price_range', {})
+                 price = price_range.get('min_price', 0)
+
+            # Tratamento de Link (Permalink)
+            permalink = item.get('permalink')
+            if not permalink:
+                # Constrói o link manualmente se não vier
+                permalink = f"https://www.mercadolivre.com.br/p/{item.get('id')}"
+
             normalized.append({
                 'id': item.get('id'),
-                'title': item.get('name', item.get('title', 'Sem título')), # /products usa 'name'
+                'title': item.get('name', item.get('title', 'Sem título')), 
                 'status': 'Ativo' if item.get('status') == 'active' else item.get('status', 'Inativo'),
-                'price': item.get('price', 0),
+                'price': price or 0,
                 'thumbnail': thumbnail if has_image else "https://via.placeholder.com/300x300?text=Sem+Imagem",
                 'has_image': has_image,
-                'permalink': item.get('permalink', '#'),
+                'permalink': permalink,
                 'brand': brand,
                 'color': color,
                 'additional_attr': third_attr,

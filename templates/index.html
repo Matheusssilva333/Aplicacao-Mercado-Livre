@@ -26,9 +26,11 @@
 
     <div class="container">
         {% if not is_logged_in %}
-        <div class="demo-badge">
-            <strong>⚠️ Modo de Demonstração Ativo:</strong>
-            Você está vendo dados sugeridos. Conecte sua conta para ver preços e produtos reais.
+        <div class="welcome-message"
+            style="text-align: center; padding: 3rem; background: #fffbe6; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #ffe58f;">
+            <h2 style="color: #856404; margin-bottom: 1rem;">🚀 Bem-vindo ao ML Explorer!</h2>
+            <p style="color: #856404; font-size: 1.1rem;">Para pesquisar produtos reais no Mercado Livre e ver preços
+                atualizados, conecte sua conta usando o botão no topo da página.</p>
         </div>
         {% endif %}
 

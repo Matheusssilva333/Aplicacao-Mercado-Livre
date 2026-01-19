@@ -30,34 +30,27 @@ def index():
     query = request.args.get('q', 'notebook')
     brand_filter = request.args.get('brand')
     
-    # Instancia serviço (mesmo sem token para permitir modo Mock rico)
+    # Instancia serviço apenas com token real
     ml_service = MercadoLivreService(access_token)
     
-    try:
-        # Tenta buscar produtos (o serviço já lida com o fallback para mock rico internamente)
-        products = ml_service.search_products(query=query)
-        
-        if brand_filter:
-            products = ml_service.filter_by_brand(products, brand_filter)
+    products = []
+    if access_token:
+        try:
+            products = ml_service.search_products(query=query)
+            if brand_filter:
+                products = ml_service.filter_by_brand(products, brand_filter)
+        except Exception as e:
+            logger.error(f"Erro ao buscar produtos reais: {str(e)}")
             
-        return render_template("index.html", products=products, is_logged_in=bool(access_token))
-    except Exception as e:
-        logger.error(f"Erro fatal na rota principal: {str(e)}")
-        # Última linha de defesa: Mock forçado
-        products = ml_service._get_rich_mock_products(query)
-        return render_template("index.html", products=products, is_logged_in=bool(access_token))
+    return render_template("index.html", products=products, is_logged_in=bool(access_token))
 
 @app.route("/login")
 def login():
     url = auth_service.get_auth_url()
     if not url:
-        return redirect(url_for('login_mock'))
+        logger.error("Não foi possível gerar a URL de login. Verifique as credenciais no .env")
+        return redirect(url_for('index', error="config_error"))
     return redirect(url)
-
-@app.route("/login-mock")
-def login_mock():
-    session['access_token'] = 'mock-token'
-    return redirect(url_for('index'))
 
 @app.route("/callback")
 def callback():

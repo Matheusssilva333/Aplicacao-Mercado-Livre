@@ -26,31 +26,47 @@ auth_service = AuthService()
 
 @app.route("/")
 def index():
-    # Tenta pegar da sessão primeiro, depois do .env como fallback
+    # Recupera tokens
     access_token = session.get('access_token') or os.getenv("ML_ACCESS_TOKEN")
     refresh_token = session.get('refresh_token') or os.getenv("ML_REFRESH_TOKEN")
     
     query = request.args.get('q', 'notebook')
-    brand_filter = request.args.get('brand')
     
-    # Instancia serviço
-    ml_service = MercadoLivreService(access_token)
-    
-    try:
-        # Busca produtos
-        products = ml_service.search_products(query=query)
+    products = []
+    error_message = None
+
+    if access_token:
+        ml_service = MercadoLivreService(access_token)
+        results = ml_service.search_products(query=query)
         
-        # Se falhou e temos um refresh token, poderíamos tentar renovar aqui futuramente
-        # Por enquanto, apenas usamos o que temos
-        
-        if brand_filter:
-            products = ml_service.filter_by_brand(products, brand_filter)
-    except Exception as e:
-        logger.error(f"Erro ao carregar vitrine: {str(e)}")
-        products = []
+        # Lógica de Diferencial: Renovação Automática
+        if isinstance(results, dict) and results.get('error') == 'auth_expired' and refresh_token:
+            logger.info("Access token expirado. Tentando renovação automática...")
+            new_tokens = auth_service.refresh_access_token(refresh_token)
             
+            if 'access_token' in new_tokens:
+                access_token = new_tokens['access_token']
+                session['access_token'] = access_token
+                if 'refresh_token' in new_tokens:
+                    session['refresh_token'] = new_tokens['refresh_token']
+                
+                # Tenta a busca novamente com o novo token
+                ml_service = MercadoLivreService(access_token)
+                results = ml_service.search_products(query=query)
+            else:
+                error_message = "Sua sessão expirou. Por favor, conecte sua conta novamente."
+                access_token = None # Força re-login
+
+        if isinstance(results, list):
+            products = results
+        elif isinstance(results, dict) and 'error' in results:
+            error_message = results.get('message', "Ocorreu um erro ao buscar produtos.")
+    else:
+        error_message = "Conecte sua conta do Mercado Livre para realizar buscas no catálogo."
+
     return render_template("index.html", 
                          products=products, 
+                         error_message=error_message,
                          is_logged_in=bool(access_token),
                          user_id=session.get('ml_user_id') or os.getenv("ML_USER_ID"))
 

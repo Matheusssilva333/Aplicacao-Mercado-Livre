@@ -25,58 +25,52 @@
     </header>
 
     <div class="container">
-        {% if not is_logged_in %}
-        <div class="welcome-message"
-            style="text-align: center; padding: 3rem; background: #fffbe6; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #ffe58f;">
-            <h2 style="color: #856404; margin-bottom: 1rem;">🚀 Bem-vindo ao ML Explorer!</h2>
-            <p style="color: #856404; font-size: 1.1rem;">Para pesquisar produtos reais no Mercado Livre e ver preços
-                atualizados, conecte sua conta usando o botão no topo da página.</p>
+        {% if error_message %}
+        <div class="alert alert-info">
+            {{ error_message }}
+            {% if not is_logged_in %}
+            <br><br>
+            <a href="{{ url_for('login') }}" class="btn-auth-main">Conectar Agora</a>
+            {% endif %}
         </div>
         {% endif %}
 
         <div class="filters">
             <form action="/" method="GET">
-                <input type="text" name="q" placeholder="Buscar produtos, marcas e muito mais..."
+                <input type="text" name="q" placeholder="Buscar no catálogo (ex: iPhone, Cadeira, Mochila...)"
                     value="{{ request.args.get('q', 'notebook') }}">
-                <input type="text" name="brand" placeholder="Filtrar por marca"
-                    value="{{ request.args.get('brand', '') }}">
-                <button type="submit">Pesquisar</button>
+                <button type="submit">Buscar Catálogo</button>
             </form>
         </div>
 
         <div class="product-grid">
             {% for product in products %}
             <div class="product-card" onclick="window.open('{{ product.permalink }}', '_blank')">
+                <div class="status-badge">{{ product.status }}</div>
                 <div class="product-image-container">
                     <img src="{{ product.thumbnail }}" alt="{{ product.title }}" class="product-image">
                 </div>
                 <div class="product-info">
-                    <span class="product-brand">{{ product.brand }}</span>
                     <h3 class="product-title">{{ product.title }}</h3>
 
+                    <div class="attributes-list">
+                        {% for attr in product.attributes %}
+                        <div class="attribute-item">
+                            <span class="attr-label">{{ attr.label }}:</span>
+                            <span class="attr-value">{{ attr.value }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
                     <div class="price-container">
-                        {% if product.original_price %}
-                        <span class="original-price">R$ {{ "{:,.2f}".format(product.original_price).replace(',',
-                            'X').replace('.', ',').replace('X', '.') }}</span>
-                        {% endif %}
                         <div class="current-price-row">
                             <span class="product-price">R$ {{ "{:,.2f}".format(product.price).replace(',',
                                 'X').replace('.', ',').replace('X', '.') }}</span>
-                            {% if product.discount > 0 %}
-                            <span class="discount-badge">{{ product.discount }}% OFF</span>
-                            {% endif %}
                         </div>
                     </div>
-
-                    {% if product.free_shipping %}
-                    <div class="free-shipping">Frete grátis</div>
-                    {% endif %}
-
-                    <div class="rating-container">
-                        <span class="star">★</span>
-                        <span class="rating-value">{{ product.rating }}</span>
-                        <span class="reviews-count">({{ product.reviews_count }})</span>
-                    </div>
+                </div>
+                <div class="card-footer">
+                    Ver detalhes no Mercado Livre
                 </div>
             </div>
             {% else %}

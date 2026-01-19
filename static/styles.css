@@ -214,6 +214,86 @@ header {
     color: #999;
 }
 
+.alert {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #bbdefb;
+}
+
+.btn-auth-main {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background-color: var(--secondary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 166, 80, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    z-index: 10;
+    text-transform: uppercase;
+}
+
+.attributes-list {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.attribute-item {
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dotted #eee;
+    padding-bottom: 2px;
+}
+
+.attr-label {
+    color: #888;
+    font-weight: 500;
+}
+
+.attr-value {
+    color: #333;
+    font-weight: 600;
+    text-align: right;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-footer {
+    padding: 0.8rem;
+    background: #f8f8f8;
+    color: var(--secondary-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
 .demo-badge {
     background: #fff3cd;
     color: #856404;

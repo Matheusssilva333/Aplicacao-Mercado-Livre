@@ -13,88 +13,110 @@ class MercadoLivreService:
 
     def __init__(self, access_token=None):
         self.access_token = access_token
-        self.browser_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        self.headers = {
+            'Authorization': f'Bearer {self.access_token}',
             'Accept': 'application/json',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'User-Agent': 'ML-Explorer/1.0.0'
         }
+
+    def search_products(self, query="notebook"):
+        """
+        Busca produtos ativos no catálogo usando o endpoint obrigatório do desafio.
+        """
+        if not self.access_token:
+            logger.warning("Tentativa de busca sem access_token.")
+            return []
+
+        # Endpoint específico solicitado no desafio
+        url = f"{self.API_BASE_URL}/products/search"
         
-        self.headers = self.browser_headers.copy()
-        if self.access_token:
-            self.headers['Authorization'] = f'Bearer {self.access_token}'
+        # Parâmetros mínimos exigidos
+        params = {
+            'status': 'active',
+            'site_id': 'MLB',
+            'q': query,
+            'limit': 10
+        }
 
-    def search_products(self, query="notebook", seller_id=None):
-        """
-        Busca produtos ativos usando a API real.
-        Tenta modo autenticado primeiro, depois modo público em caso de erro.
-        """
-        url = f"{self.API_BASE_URL}/sites/MLB/search"
-        params = {'q': query}
-        if seller_id:
-            params['seller_id'] = seller_id
-
-        # Tentativa 1: Com Token (se existir)
-        if self.access_token:
-            try:
-                logger.info(f"Tentando busca autenticada para: {query}")
-                response = requests.get(url, params=params, headers=self.headers, timeout=10)
-                if response.status_code == 200:
-                    return self._normalize_results(response.json().get('results', []))
-                else:
-                    logger.warning(f"Busca autenticada falhou ({response.status_code}). Tentando modo público...")
-            except Exception as e:
-                logger.error(f"Erro na busca autenticada: {e}")
-
-        # Tentativa 2: Modo Público (sem token) - Simulação completa de navegador
         try:
-            logger.info(f"Executando busca pública resiliente para: {query}")
-            response = requests.get(url, params=params, headers=self.browser_headers, timeout=10)
+            logger.info(f"Buscando no catálogo: {query}")
+            response = requests.get(url, params=params, headers=self.headers, timeout=10)
+            
+            if response.status_code == 401:
+                logger.error("Token expirado ou inválido (401)")
+                return {"error": "auth_expired"}
+                
             response.raise_for_status()
-            return self._normalize_results(response.json().get('results', []))
+            data = response.json()
+            
+            # O endpoint /products/search pode retornar 'results' ou 'products' dependendo da versão
+            results = data.get('results', [])
+            
+            normalized = self._normalize_results(results)
+            
+            # Requisito 4: Ordenação (Produtos com imagem primeiro)
+            normalized.sort(key=lambda x: x['has_image'], reverse=True)
+            
+            return normalized
+            
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Erro HTTP na API ML: {e}")
+            return {"error": "api_error", "message": f"Erro na API: {response.status_code}"}
         except Exception as e:
-            logger.error(f"Erro fatal na busca pública: {str(e)}")
+            logger.error(f"Erro inesperado na busca: {str(e)}")
             return []
 
     def _normalize_results(self, results):
-        """Normaliza os dados da API real."""
+        """Normaliza os dados seguindo os requisitos do desafio."""
         normalized = []
         for item in results:
-            attributes = item.get('attributes', [])
-            brand = "Marca não informada"
-            for attr in attributes:
-                if attr.get('id') == 'BRAND':
-                    brand = attr.get('value_name', brand)
-                    break
+            # Captura atributos (exige pelo menos 3)
+            raw_attributes = item.get('attributes', [])
+            attrs_dict = {attr.get('id'): attr.get('value_name') for attr in raw_attributes if attr.get('value_name')}
             
-            # Ajuste da imagem para maior qualidade
+            # Atributos específicos solicitados no desafio ou relevantes
+            display_attrs = []
+            
+            # Tenta pegar Marca, Cor e um terceiro (Capacidade ou Modelo)
+            brand = attrs_dict.get('BRAND', attrs_dict.get('MARCA', 'Não informado'))
+            color = attrs_dict.get('COLOR', attrs_dict.get('COR', 'Não informado'))
+            
+            # Terceiro atributo dinâmico (Capacidade, Modelo ou o primeiro disponível que não seja marca/cor)
+            model = attrs_dict.get('MODEL', attrs_dict.get('MODELO'))
+            capacity = attrs_dict.get('CAPACITY', attrs_dict.get('CAPACIDADE'))
+            third_attr = capacity or model or "Não informado"
+            
+            # Se ainda faltar, pega qualquer outro disponível
+            if third_attr == "Não informado":
+                for k, v in attrs_dict.items():
+                    if k not in ['BRAND', 'MARCA', 'COLOR', 'COR'] and v:
+                        third_attr = v
+                        break
+
+            # Imagem e Placeholder
             thumbnail = item.get('thumbnail', '')
-            if thumbnail.endswith('-I.jpg'):
-                thumbnail = thumbnail.replace('-I.jpg', '-V.jpg')
+            has_image = bool(thumbnail and "placeholder" not in thumbnail.lower())
             
+            # Melhorar qualidade da imagem se possível
+            if has_image and thumbnail.endswith('-I.jpg'):
+                thumbnail = thumbnail.replace('-I.jpg', '-V.jpg')
+
             normalized.append({
                 'id': item.get('id'),
-                'title': item.get('title', 'Sem título'),
+                'title': item.get('name', item.get('title', 'Sem título')), # /products usa 'name'
+                'status': 'Ativo' if item.get('status') == 'active' else item.get('status', 'Inativo'),
                 'price': item.get('price', 0),
-                'original_price': item.get('base_price'),
-                'discount': 0, # Cálculo de desconto pode ser adicionado aqui
-                'currency': item.get('currency_id', 'BRL'),
-                'thumbnail': thumbnail,
-                'permalink': item.get('permalink'),
+                'thumbnail': thumbnail if has_image else "https://via.placeholder.com/300x300?text=Sem+Imagem",
+                'has_image': has_image,
+                'permalink': item.get('permalink', '#'),
                 'brand': brand,
-                'free_shipping': item.get('shipping', {}).get('free_shipping', False),
-                'rating': item.get('reviews', {}).get('rating_average', 4.5), # Fallback caso não venha
-                'reviews_count': item.get('reviews', {}).get('total', 0),
-                'condition': item.get('condition'),
-                'is_mock': False
+                'color': color,
+                'additional_attr': third_attr,
+                'attributes': [
+                    {'label': 'Marca', 'value': brand},
+                    {'label': 'Cor', 'value': color},
+                    {'label': 'Capacidade/Modelo', 'value': third_attr}
+                ]
             })
         return normalized
 

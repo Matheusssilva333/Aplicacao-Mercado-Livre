@@ -30,17 +30,17 @@ def index():
     query = request.args.get('q', 'notebook')
     brand_filter = request.args.get('brand')
     
-    # Instancia serviço apenas com token real
+    # Instancia serviço (com ou sem token)
     ml_service = MercadoLivreService(access_token)
     
-    products = []
-    if access_token:
-        try:
-            products = ml_service.search_products(query=query)
-            if brand_filter:
-                products = ml_service.filter_by_brand(products, brand_filter)
-        except Exception as e:
-            logger.error(f"Erro ao buscar produtos reais: {str(e)}")
+    try:
+        # Busca produtos (agora tem fallback automático para público se falhar)
+        products = ml_service.search_products(query=query)
+        if brand_filter:
+            products = ml_service.filter_by_brand(products, brand_filter)
+    except Exception as e:
+        logger.error(f"Erro ao carregar vitrine: {str(e)}")
+        products = []
             
     return render_template("index.html", products=products, is_logged_in=bool(access_token))
 

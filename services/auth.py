@@ -49,7 +49,8 @@ class AuthService:
         
         headers = {
             'accept': 'application/json',
-            'content-type': 'application/x-www-form-urlencoded'
+            'content-type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)'
         }
         
         try:

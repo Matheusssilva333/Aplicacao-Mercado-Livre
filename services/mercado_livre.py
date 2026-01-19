@@ -13,39 +13,47 @@ class MercadoLivreService:
 
     def __init__(self, access_token=None):
         self.access_token = access_token
+        # Adicionando User-Agent profissional para evitar bloqueios do CloudFront/ML
         self.headers = {
-            'Authorization': f'Bearer {self.access_token}'
-        } if self.access_token else {}
+            'Authorization': f'Bearer {self.access_token}',
+            'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)',
+            'Accept': 'application/json'
+        } if self.access_token else {
+            'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)',
+            'Accept': 'application/json'
+        }
 
     def search_products(self, query="notebook", seller_id=None):
         """
         Busca produtos ativos usando a API real.
-        Exige um token de acesso válido.
+        Tenta modo autenticado primeiro, depois modo público em caso de erro.
         """
-        if not self.access_token:
-            logger.error("Tentativa de busca sem token de acesso.")
-            return []
-
         url = f"{self.API_BASE_URL}/sites/MLB/search"
         params = {'q': query}
-        
         if seller_id:
             params['seller_id'] = seller_id
 
+        # Tentativa 1: Com Token (se existir)
+        if self.access_token:
+            try:
+                logger.info(f"Tentando busca autenticada para: {query}")
+                response = requests.get(url, params=params, headers=self.headers, timeout=10)
+                if response.status_code == 200:
+                    return self._normalize_results(response.json().get('results', []))
+                else:
+                    logger.warning(f"Busca autenticada falhou ({response.status_code}). Tentando modo público...")
+            except Exception as e:
+                logger.error(f"Erro na busca autenticada: {e}")
+
+        # Tentativa 2: Modo Público (sem token) - Evita o erro 403 do CloudFront
         try:
-            response = requests.get(url, params=params, headers=self.headers, timeout=10)
-            
-            if response.status_code == 401:
-                logger.warning("Token expirado ou inválido (401).")
-                return []
-            
+            logger.info(f"Executando busca pública para: {query}")
+            public_headers = {'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)'}
+            response = requests.get(url, params=params, headers=public_headers, timeout=10)
             response.raise_for_status()
-            data = response.json()
-            results = data.get('results', [])
-            
-            return self._normalize_results(results)
+            return self._normalize_results(response.json().get('results', []))
         except Exception as e:
-            logger.error(f"Erro na API do ML: {str(e)}")
+            logger.error(f"Erro fatal na busca pública: {str(e)}")
             return []
 
     def _normalize_results(self, results):

@@ -66,7 +66,7 @@ def callback():
         return redirect(url_for('index'))
 
     token_data = auth_service.exchange_code_for_token(code)
-    
+    print("token_data", token_data)
     if 'access_token' in token_data:
         session['access_token'] = token_data['access_token']
         logger.info("Autenticação realizada com sucesso.")

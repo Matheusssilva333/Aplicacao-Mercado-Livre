@@ -56,6 +56,3 @@ Acesse `http://localhost:5000`.
 - **Resiliência**: Foi implementada uma lógica de retry no backend. Se uma busca falha por token expirado (401), o sistema tenta renovar o token e repetir a busca silenciosamente.
 - **Experiência do Usuário**: Erros técnicos são capturados e transformados em mensagens amigáveis na interface, evitando a exibição de stack traces.
 - **Dados do Catálogo**: O endpoint `/products/search` foi escolhido conforme exigido no desafio, garantindo que os resultados venham do catálogo oficial de produtos.
-
----
-Desenvolvido por [Antigravity/User] como parte de um desafio técnico.

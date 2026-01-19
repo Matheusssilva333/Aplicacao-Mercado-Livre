@@ -13,15 +13,19 @@ class MercadoLivreService:
 
     def __init__(self, access_token=None):
         self.access_token = access_token
-        # Adicionando User-Agent profissional para evitar bloqueios do CloudFront/ML
-        self.headers = {
-            'Authorization': f'Bearer {self.access_token}',
-            'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)',
-            'Accept': 'application/json'
-        } if self.access_token else {
-            'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)',
-            'Accept': 'application/json'
+        # User-Agent de navegador real para evitar bloqueios do CloudFront no Render
+        self.browser_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
         }
+        
+        self.headers = self.browser_headers.copy()
+        if self.access_token:
+            self.headers['Authorization'] = f'Bearer {self.access_token}'
 
     def search_products(self, query="notebook", seller_id=None):
         """
@@ -45,11 +49,10 @@ class MercadoLivreService:
             except Exception as e:
                 logger.error(f"Erro na busca autenticada: {e}")
 
-        # Tentativa 2: Modo Público (sem token) - Evita o erro 403 do CloudFront
+        # Tentativa 2: Modo Público (sem token) - Simulação completa de navegador
         try:
-            logger.info(f"Executando busca pública para: {query}")
-            public_headers = {'User-Agent': 'ML-Explorer/1.0.0 (Python Flask App)'}
-            response = requests.get(url, params=params, headers=public_headers, timeout=10)
+            logger.info(f"Executando busca pública resiliente para: {query}")
+            response = requests.get(url, params=params, headers=self.browser_headers, timeout=10)
             response.raise_for_status()
             return self._normalize_results(response.json().get('results', []))
         except Exception as e:

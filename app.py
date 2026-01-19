@@ -17,7 +17,10 @@ logger = logging.getLogger("ML_PROD")
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "ml-production-secure-key-2026")
+# Busca a chave do .env. Se não existir, gera um erro claro.
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    logger.critical("ERRO: FLASK_SECRET_KEY não definida no arquivo .env!")
 
 auth_service = AuthService()
 
